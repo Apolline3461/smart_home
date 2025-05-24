@@ -16,7 +16,7 @@
 #define RGB2_B 8
 
 void setup() {
-  Serial.begin(9600); // Initialisation du port série
+  Serial.begin(9600);
 
   pinMode(DATA_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
@@ -25,6 +25,7 @@ void setup() {
   pinMode(RGB1_R, OUTPUT);
   pinMode(RGB1_G, OUTPUT);
   pinMode(RGB1_B, OUTPUT);
+
   pinMode(RGB2_R, OUTPUT);
   pinMode(RGB2_G, OUTPUT);
   pinMode(RGB2_B, OUTPUT);
@@ -32,42 +33,41 @@ void setup() {
   Serial.println("Setup done.");
 }
 
+void outdoorLedON() {
+    Serial.println("Allumage des 12 LEDs via 74HC595");
+    digitalWrite(LATCH_PIN, LOW);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, B00001111); // 2e 595: LED 8-11 (Q0-Q3)
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, B11111111); // 1er 595: LED 0-7
+    digitalWrite(LATCH_PIN, HIGH);
+}
+
+void outdoorLedOFF() {
+    Serial.println("Extinction des 12 LEDs");
+    digitalWrite(LATCH_PIN, LOW);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
+    digitalWrite(LATCH_PIN, HIGH);
+}
+
+void turnOnOffRGB(uint8_t rPin, uint8_t gPin, uint8_t bPin, uint8_t r, uint8_t g, uint8_t b) {
+    analogWrite(rPin, r);
+    analogWrite(gPin, g);
+    analogWrite(bPin, b);
+}
+
 void loop() {
-  // Allumer les 12 LEDs
-  Serial.println("Allumage des 12 LEDs via 74HC595");
-  digitalWrite(LATCH_PIN, LOW);
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, B00001111); // 2e 595: LED 8-11 (Q0-Q3)
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, B11111111); // 1er 595: LED 0-7
-  digitalWrite(LATCH_PIN, HIGH);
-  delay(1000);
+    outdoorLedON();
 
-  // Éteindre les 12 LEDs
-  Serial.println("Extinction des 12 LEDs");
-  digitalWrite(LATCH_PIN, LOW);
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
-  digitalWrite(LATCH_PIN, HIGH);
-  delay(1000);
+    Serial.println("allume bleu");
+    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 255); // blue
 
-  // RGB LED 1 ON (vert)
-  analogWrite(RGB1_R, 0);
-  analogWrite(RGB1_G, 255);
-  analogWrite(RGB1_B, 0);
-  delay(1000);
-  analogWrite(RGB1_R, 0);
-  analogWrite(RGB1_G, 0);
-  analogWrite(RGB1_B, 0);
+    Serial.println("allume vert");
+    turnOnOffRGB(RGB2_R, RGB2_G, RGB2_B, 0, 255, 0); // green
 
-  // RGB LED 2 ON (Bleu)
-  Serial.println("Allumage RGB2 en bleu");
-  analogWrite(RGB2_R, 0);
-  analogWrite(RGB2_G, 0);
-  analogWrite(RGB2_B, 255);
-  delay(1000);
-  analogWrite(RGB2_R, 0);
-  analogWrite(RGB2_G, 0);
-  analogWrite(RGB2_B, 0);
+    delay(5000);
 
-  Serial.println("Cycle terminé.\n");
-  delay(1000);
+    outdoorLedOFF();
+    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 0);
+    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 0);
+    Serial.println("Cycle terminé.\n");
 }
