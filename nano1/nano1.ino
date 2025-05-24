@@ -3,6 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
+#include <Servo.h>
 
 // DHT11 setup
 #define DHTPIN 2
@@ -11,6 +12,9 @@ DHT dht(DHTPIN, DHTTYPE);
 
 #define RAIN_PIN 3
 #define RAIN_LED 4
+
+#define SERVO_PIN 5
+Servo windowServo;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -23,7 +27,11 @@ void setup() {
 
     pinMode(RAIN_PIN, INPUT_PULLUP);
     pinMode(RAIN_LED, OUTPUT);
+
+    windowServo.attach(SERVO_PIN);
+    windowServo.write(90);
     delay(2000);
+    windowServo.detach();
 }
 
 void loop() {
@@ -41,9 +49,14 @@ Serial.println(digitalRead(RAIN_PIN));
         delay(2000);
         return;
     }
+    digitalWrite(RAIN_LED, isRaining ? HIGH : LOW);
+    if (isRaining) {
+        windowServo.attach(SERVO_PIN);
+        windowServo.write(0);
+        delay(800);
+        windowServo.detach();
+    }
 
-   digitalWrite(RAIN_LED, isRaining ? HIGH : LOW);
-    
     lcd.clear();
 
     lcd.setCursor(0, 0);
