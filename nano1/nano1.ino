@@ -9,30 +9,41 @@
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+#define RAIN_PIN 3
+#define RAIN_LED 4
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
-  Serial.begin(9600);
-  dht.begin();
-  lcd.begin(16, 2);
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  delay(2000);
+    Serial.begin(9600);
+    dht.begin();
+    lcd.begin(16, 2);
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+
+    pinMode(RAIN_PIN, INPUT_PULLUP);
+    pinMode(RAIN_LED, OUTPUT);
+    delay(2000);
 }
 
 void loop() {
     float temp = dht.readTemperature();
     float hum = dht.readHumidity();
+    bool isRaining = digitalRead(RAIN_PIN) == HIGH;
+
+Serial.println(digitalRead(RAIN_PIN));
 
     if (isnan(temp) || isnan(hum)) {
-      Serial.println("Erreur lecture DHT!");
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Erreur capteur");
-      delay(2000);
-      return;
+        Serial.println("Erreur lecture DHT!");
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Erreur capteur");
+        delay(2000);
+        return;
     }
 
+   digitalWrite(RAIN_LED, isRaining ? HIGH : LOW);
+    
     lcd.clear();
 
     lcd.setCursor(0, 0);
