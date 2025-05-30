@@ -5,18 +5,58 @@
 #include <DHT_U.h>
 #include <Servo.h>
 
-// DHT11 setup
-#define DHTPIN 2
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
+// temperature and humidity sensor information
+#define DHT_PIN 2
+#define MEASUREMENT_INTERVAL 2000
 
+DHT dht(DHT_PIN, DHT11);
+
+// rain sensor information
 #define RAIN_PIN 3
 #define RAIN_LED 4
 
+// window information
+#define OPEN_WIN_POS 90
+#define CLOSE_WIN_POS 0
 #define SERVO_PIN 5
 Servo windowServo;
+bool winIsOpen = false;
+bool night = false;
+bool lastNight = false;
 
+// Display module information
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void receiveEvent(int byteRcv) {
+    if (byteRcv >= 1) {
+        byte value = Wire.read();
+        night = (value == 1);
+    }
+}
+
+void manageWindow(int degree) {
+    windowServo.attach(SERVO_PIN);
+    windowServo.write(degree);
+    delay(800);
+    windowServo.detach();
+}
+
+void displayMeteoInformation(float &temp, float &hum) {
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("Temp: ");
+    lcd.print(temp);
+    lcd.setCursor(13, 0);
+    lcd.print((char)223);
+    lcd.print("C");
+
+    lcd.setCursor(0, 1);
+    lcd.print(" Hum: ");
+    lcd.print(hum);
+    lcd.setCursor(13, 1);
+    lcd.print(" %");
+}
 
 void setup() {
     Serial.begin(9600);
@@ -28,10 +68,10 @@ void setup() {
     pinMode(RAIN_PIN, INPUT_PULLUP);
     pinMode(RAIN_LED, OUTPUT);
 
-    windowServo.attach(SERVO_PIN);
-    windowServo.write(90);
+    manageWindow(CLOSE_WIN_POS);
+    Wire.begin(0x08);
+    Wire.onReceive(receiveEvent);
     delay(2000);
-    windowServo.detach();
 }
 
 void loop() {
@@ -39,38 +79,44 @@ void loop() {
     float hum = dht.readHumidity();
     bool isRaining = digitalRead(RAIN_PIN) == HIGH;
 
-Serial.println(digitalRead(RAIN_PIN));
-
     if (isnan(temp) || isnan(hum)) {
-        Serial.println("Erreur lecture DHT!");
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Erreur capteur");
-        delay(2000);
+        static bool dhtErrorShown = false;
+        if (!dhtErrorShown) {
+            Serial.println("ERROR reading DHT!");
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Sensor error");
+            dhtErrorShown = true;
+        }
+        delay(MEASUREMENT_INTERVAL);
         return;
     }
-    digitalWrite(RAIN_LED, isRaining ? HIGH : LOW);
+    displayMeteoInformation(temp, hum);
     if (isRaining) {
-        windowServo.attach(SERVO_PIN);
-        windowServo.write(0);
-        delay(800);
-        windowServo.detach();
+        digitalWrite(RAIN_LED, HIGH);
+        if(winIsOpen) {
+            manageWindow(CLOSE_WIN_POS);
+            winIsOpen = false;
+        }
+    } else {
+        digitalWrite(RAIN_LED, LOW);
+        if (!winIsOpen && !night) {
+            manageWindow(OPEN_WIN_POS);
+            winIsOpen = true;
+        }
     }
 
-    lcd.clear();
+    if (night != lastNight) {
+        Serial.print("Changement de mode : ");
+        Serial.println(night ? "NUIT" : "JOUR");
 
-    lcd.setCursor(0, 0);
-    lcd.print("Temp: ");
-    lcd.print(temp);
-    lcd.setCursor(13, 0);
-    lcd.print((char)223); // symbole ° degré
-    lcd.print("C");
+        // Fermer la fenêtre si la nuit commence
+        if (night && winIsOpen) {
+            manageWindow(CLOSE_WIN_POS);
+            winIsOpen = false;
+        }
 
-    lcd.setCursor(0, 1);
-    lcd.print(" Hum: ");
-    lcd.print(hum);
-    lcd.setCursor(13, 1);
-    lcd.print(" %");
-
-    delay(2000); // Attente 2s avant prochaine mesure
+        lastNight = night; // Mise à jour
+    }
+    delay(MEASUREMENT_INTERVAL);
 }

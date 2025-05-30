@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 
 // 74HC595
 #define DATA_PIN 9    // DS
@@ -16,21 +17,23 @@
 #define RGB2_B 8
 
 void setup() {
-  Serial.begin(9600);
+    Serial.begin(9600);
 
-  pinMode(DATA_PIN, OUTPUT);
-  pinMode(CLOCK_PIN, OUTPUT);
-  pinMode(LATCH_PIN, OUTPUT);
+    Wire.begin(0x09);
 
-  pinMode(RGB1_R, OUTPUT);
-  pinMode(RGB1_G, OUTPUT);
-  pinMode(RGB1_B, OUTPUT);
+    pinMode(DATA_PIN, OUTPUT);
+    pinMode(CLOCK_PIN, OUTPUT);
+    pinMode(LATCH_PIN, OUTPUT);
 
-  pinMode(RGB2_R, OUTPUT);
-  pinMode(RGB2_G, OUTPUT);
-  pinMode(RGB2_B, OUTPUT);
+    pinMode(RGB1_R, OUTPUT);
+    pinMode(RGB1_G, OUTPUT);
+    pinMode(RGB1_B, OUTPUT);
 
-  Serial.println("Setup done.");
+    pinMode(RGB2_R, OUTPUT);
+    pinMode(RGB2_G, OUTPUT);
+    pinMode(RGB2_B, OUTPUT);
+
+    Serial.println("Setup done.");
 }
 
 void outdoorLedON() {
