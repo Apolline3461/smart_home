@@ -16,11 +16,22 @@
 #define RGB2_G 7
 #define RGB2_B 8
 
+bool isOff = true;
+bool night = true;
+bool lastNight = false;
+
+void receiveEvent(int byteRcv) {
+    if (byteRcv >= 1) {
+        byte value = Wire.read();
+        night = (value == 1);
+    }
+}
+
 void setup() {
     Serial.begin(9600);
 
     Wire.begin(0x09);
-
+    Wire.onReceive(receiveEvent);
     pinMode(DATA_PIN, OUTPUT);
     pinMode(CLOCK_PIN, OUTPUT);
     pinMode(LATCH_PIN, OUTPUT);
@@ -36,7 +47,7 @@ void setup() {
     Serial.println("Setup done.");
 }
 
-void outdoorLedON() {
+void outdoorLedOn() {
     Serial.println("Allumage des 12 LEDs via 74HC595");
     digitalWrite(LATCH_PIN, LOW);
     shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, B00001111); // 2e 595: LED 8-11 (Q0-Q3)
@@ -44,7 +55,7 @@ void outdoorLedON() {
     digitalWrite(LATCH_PIN, HIGH);
 }
 
-void outdoorLedOFF() {
+void outdoorLedOff() {
     Serial.println("Extinction des 12 LEDs");
     digitalWrite(LATCH_PIN, LOW);
     shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
@@ -59,18 +70,18 @@ void turnOnOffRGB(uint8_t rPin, uint8_t gPin, uint8_t bPin, uint8_t r, uint8_t g
 }
 
 void loop() {
-    outdoorLedON();
-
-    Serial.println("allume bleu");
-    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 255); // blue
-
-    Serial.println("allume vert");
-    turnOnOffRGB(RGB2_R, RGB2_G, RGB2_B, 0, 255, 0); // green
-
-    delay(5000);
-
-    outdoorLedOFF();
-    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 0);
-    turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 0);
-    Serial.println("Cycle terminé.\n");
+    if (night != lastNight) {
+        if (night) {
+            outdoorLedOn();
+            turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 255); // blue
+            turnOnOffRGB(RGB2_R, RGB2_G, RGB2_B, 0, 255, 0); // green
+            isOff = false;
+        } else {
+            outdoorLedOff();
+            turnOnOffRGB(RGB1_R, RGB1_G, RGB1_B, 0, 0, 0);
+            turnOnOffRGB(RGB2_R, RGB2_G, RGB2_B, 0, 0, 0);
+            isOff = true;
+        }
+        lastNight = night;
+    }
 }

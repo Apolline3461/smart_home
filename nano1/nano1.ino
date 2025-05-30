@@ -107,16 +107,12 @@ void loop() {
     }
 
     if (night != lastNight) {
-        Serial.print("Changement de mode : ");
-        Serial.println(night ? "NUIT" : "JOUR");
-
-        // Fermer la fenêtre si la nuit commence
+        // Close the window if the night has come
         if (night && winIsOpen) {
             manageWindow(CLOSE_WIN_POS);
             winIsOpen = false;
         }
-
-        lastNight = night; // Mise à jour
+        lastNight = night;
     }
     delay(MEASUREMENT_INTERVAL);
 }

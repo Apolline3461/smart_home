@@ -50,6 +50,10 @@ void loop() {
              Wire.beginTransmission(0x08);
              Wire.write(valueToSend);
              Wire.endTransmission();
+            delay(5);
+             Wire.beginTransmission(0x09);
+             Wire.write(valueToSend);
+             Wire.endTransmission();
         }
 
     }
