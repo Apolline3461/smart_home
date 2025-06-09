@@ -3,20 +3,26 @@
 #include <Servo.h>
 
 bool isBusy = false;
+#define OPEN 100
+#define CLOSE 0
 
-// RFID
+// entry door
+#define OPENING_TIME_ENTRY 3000
+    // RFID
 #define SS_PIN 10
 #define RST_PIN 9
 MFRC522 rfid(SS_PIN, RST_PIN);
-
-// Servo
+    // Servo
 Servo doorServo;
-#define DOOR_PIN 3
+#define DOOR_PIN 4
 
+
+// garage door
+#define OPENING_TIME_GARAGE 5000
+    //Servo
 Servo garageServo;
-#define GAR_PIN 4
-
-// HC-SR04
+#define GAR_PIN 3
+    // HC-SR04
 #define TRIG_PIN 6
 #define ECHO_PIN 7
 
@@ -36,9 +42,9 @@ void setup() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
-  setServo(doorServo, DOOR_PIN, 0);
+  setServo(doorServo, DOOR_PIN, CLOSE);
   delay(800); 
-  setServo(garageServo, GAR_PIN, 0);
+  setServo(garageServo, GAR_PIN, CLOSE);
 }
 
 void handleRFID() {
@@ -46,11 +52,12 @@ void handleRFID() {
   Serial.println("Badge detected");
   doorServo.attach(DOOR_PIN);
   doorServo.write(90);  // ouvrir
-  delay(3000);
+  delay(OPENING_TIME_ENTRY);
   doorServo.write(0); 
   delay(500); 
   doorServo.detach();
   rfid.PICC_HaltA();
+  isBusy = false;
 }
 
 void handleProximity() {
@@ -69,9 +76,9 @@ void handleProximity() {
   if (distance > 0 && distance < 5) {
     isBusy = true;
     garageServo.attach(GAR_PIN);
-    garageServo.write(90);  // ouvrir garage
-    delay(3000);
-    garageServo.write(0);   // refermer
+    garageServo.write(OPEN);
+    delay(OPENING_TIME_GARAGE);
+    garageServo.write(CLOSE);
     delay(500);
     garageServo.detach();
     isBusy = false;
